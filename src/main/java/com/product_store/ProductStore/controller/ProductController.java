@@ -10,10 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -98,6 +95,58 @@ public class ProductController {
             return "products/CreateProduct";
         }
 
+        return "redirect:/products";
+
+
+    }
+    @GetMapping("/edit/{id}")
+    public String editPage(Model model, @PathVariable int id){
+    try{
+        Product product = repo.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+        ProductDTO productDTO=new ProductDTO();
+        productDTO.setName(product.getName());
+        productDTO.setBrand(product.getBrand());
+        productDTO.setCategory(product.getCategory());
+        productDTO.setPrice(product.getPrice());
+        productDTO.setDescription(product.getDescription());
+        model.addAttribute("productDto", productDTO);
+        model.addAttribute("product",product);
+
+//        model.addAttribute("product", product);
+        return "products/EditProduct";
+
+    }catch (Exception e){
+        System.out.println("Exception:"+e.getMessage());
+        return "redirect:/products";
+    }
+    }
+    @PostMapping("/edit/{id}")
+    public String updateProduct(@PathVariable int id,
+                                @Valid @ModelAttribute("productDto") ProductDTO productDto,
+                                BindingResult result,
+                                Model model) {
+
+        if (result.hasErrors()) {
+            // Re-populate product if validation fails
+            Product product = repo.findById(id).orElseThrow();
+            model.addAttribute("product", product);
+            return "products/EditProduct";
+        }
+
+        // Handle file upload and update logic
+        Product product = repo.findById(id).orElseThrow();
+        product.setName(productDto.getName());
+        product.setBrand(productDto.getBrand());
+        product.setCategory(productDto.getCategory());
+        product.setPrice(productDto.getPrice());
+        product.setDescription(productDto.getDescription());
+
+        if (!productDto.getImageFile().isEmpty()) {
+            // Handle new image upload (similar to create method)
+            // ... (your image upload logic here) ...
+        }
+
+        repo.save(product);
         return "redirect:/products";
     }
 }
